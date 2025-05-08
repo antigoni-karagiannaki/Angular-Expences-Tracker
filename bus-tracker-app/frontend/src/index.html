@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang = "en">
+  <head>
+    <title>Bus Tracker</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body { font-family: sans-serif; padding: 20px; }
+      button { padding: 10px 20px; font-size: 16px; }
+      </style>
+</head>
+<body>
+  <app-root></app-root>
+  <h2>📍 Bus Location Tracker</h2>
+  <p>Tap the button below to start sharing your location while you're on the bus.</p>
+  <button onclick="startTracking()">Start Tracking</button>
+  <p id="status">Status: Not tracking</p>
+
+  <script>
+    let watchId;
+
+    function startTracking() {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+      }
+
+      document.getElementById("status").innerText = "Status: Requesting location...";
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log("Position:", position);
+        },
+        (error) => {
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              alert("User denied the request for Geolocation.");
+              break;
+            case error.POSITION_UNAVAILABLE:
+              alert("Location information is unavailable.");
+              break;
+            case error.TIMEOUT:
+              alert("The request to get user location timed out.");
+              break;
+            default:
+              alert("An unknown error occurred.");
+              break;
+          }
+        }
+      );      
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          document.getElementById("status").innerText = `Status: Sending location... (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`;
+          console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+
+          // POST to backend
+          fetch("https://your-backend.com/api/location", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              lat: latitude,
+              lon: longitude,
+              userId: "student123", // replace this with a real identifier or session token
+              busId: "busA"         // chosen by the student earlier in the flow
+            })
+          });
+        },
+        (err) => {
+          document.getElementById("status").innerText = "Error getting location.";
+          console.error(err);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000
+        }
+      );
+    }
+  </script>
+</body>
+</html>
